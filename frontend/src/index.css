@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root {
+  --color-expense: #ef4444;
+  --color-income: #22c55e;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}

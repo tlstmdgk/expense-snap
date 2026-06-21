@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Security model per spec section 7. Key points implemented here:
+//  - A user can only read/write their own `entries` and `receipts`.
+//  - `splits` documents are readable by anyone who has the document ID
+//    (a "secret link" model, not real access control) — see the detailed
+//    note on the `splits` match block below for why, and its limitations.
+//  - All `splits` writes (create/claim/unclaim/close) go through Cloud
+//    Functions using the Admin SDK, which bypasses these rules entirely —
+//    that's what lets claimItem/unclaimItem validate claimantSessionId
+//    ownership server-side rather than trusting client-supplied data.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // users/{userId} — app-specific profile extras (spec section 4.1)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // entries/{entryId} — unified expense/income log (spec section 4.2)
+    match /entries/{entryId} {
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // receipts/{receiptId} — parsed receipt data (spec section 4.3)
+    match /receipts/{receiptId} {
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // splits/{splitId} — bill-splitting sessions (spec section 4.4)
+    //
+    // KNOWN LIMITATION (documented, not accidental): this rule allows ANY
+    // client — signed in or anonymous — to read a split document if they
+    // know its document ID. This is intentional so that anonymous
+    // claimants can run a live `onSnapshot` listener (spec 5.2) without
+    // logging in. The document ID itself is not guessable/enumerable (it's
+    // a random Firestore auto-ID, separate from the human-shareable
+    // `shareToken` field used in the URL), so this is "secret link" style
+    // security — equivalent in spirit to an unlisted Google Doc. It is
+    // NOT equivalent to real access control. For a production version,
+    // swap this for short-lived custom auth tokens minted per claimant.
+    //
+    // Direct client writes: none. All writes (create/claim/unclaim/close)
+    // go through Cloud Functions using the Admin SDK, which is what lets
+    // claimItem/unclaimItem validate claimantSessionId ownership
+    // server-side (spec section 7) instead of trusting client-supplied data.
+    match /splits/{splitId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Storage layout: receipts/{userId}/{timestamp}_{filename}
+// (see services/receiptService.js -> uploadReceiptImage()).
+//
+// Only the owning user can upload or read their own receipt images via
+// the client SDK. The parseReceipt Cloud Function reads images using the
+// Admin SDK, which bypasses these rules entirely, so OCR processing is
+// unaffected by this restriction.
+//
+// NOTE: receipt image URLs are also stored on `entries` and `receipts`
+// Firestore documents and surfaced in the Expense History UI (spec 5.3)
+// as direct links. Firebase Storage download URLs include a long-lived
+// access token, so anyone with that exact URL can view the image even
+// without matching these rules — this is standard Firebase Storage
+// behavior, not a bug introduced here, but worth knowing: don't treat
+// download URLs as secret once they've been shared outside the app.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /receipts/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
