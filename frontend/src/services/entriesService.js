@@ -35,7 +35,10 @@ export async function createEntry(userId, entry) {
     createdAt: serverTimestamp(),
     source: entry.source ?? 'manual',
     receiptId: entry.receiptId ?? null,
-    imageUrl: entry.imageUrl ?? null,
+    // No `imageUrl` field — this app never persists receipt images
+    // (spec section 2.4). Receipt-derived entries are represented by the
+    // Receipt Card component (spec 5.3.1), reading from `receiptId` ->
+    // the `receipts` collection's structured text data, not a photo.
   });
 }
 

@@ -35,10 +35,11 @@
       ]
     },
     {
-      "collectionGroup": "splits",
+      "collectionGroup": "receipts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "shareToken", "order": "ASCENDING" }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],

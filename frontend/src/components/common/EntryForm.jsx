@@ -5,7 +5,7 @@ import { useState } from 'react';
  * describe identical field shapes with different category lists and a
  * different `type` value, so one component serves both pages.
  */
-export default function EntryForm({ type, categories, onSubmit, submitting }) {
+export default function EntryForm({ type, categories, onSubmit, submitting, error }) {
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState(categories[0]);
@@ -16,7 +16,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setSuccess(false);
-    await onSubmit({
+    const saved = await onSubmit({
       type,
       amount: parseFloat(amount),
       name,
@@ -24,6 +24,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
       date,
       description,
     });
+    if (saved === false) return;
     setAmount('');
     setName('');
     setDescription('');
@@ -48,7 +49,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
           required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
           placeholder="0.00"
         />
       </div>
@@ -60,7 +61,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
           placeholder={type === 'expense' ? "Trader Joe's run" : 'Freelance payment'}
         />
       </div>
@@ -70,7 +71,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
         >
           {categories.map((c) => (
             <option key={c} value={c}>
@@ -87,7 +88,7 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
         />
       </div>
 
@@ -97,11 +98,12 @@ export default function EntryForm({ type, categories, onSubmit, submitting }) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
         />
       </div>
 
       {success && <p className="text-sm text-green-600">Saved.</p>}
+      {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <button
         type="submit"

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Elms+Sans:wght@400;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -7,4 +8,8 @@
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.font-brand {
+  font-family: "Elms Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }

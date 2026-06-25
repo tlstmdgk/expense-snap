@@ -3,9 +3,8 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 
 const TABS = [
   { to: '/upload', label: 'Upload Receipt' },
-  { to: '/history', label: 'Expense History' },
-  { to: '/add-expense', label: 'Add Expense' },
-  { to: '/add-income', label: 'Add Income' },
+  { to: '/history', label: 'Expense Tracker' },
+  { to: '/receipts', label: 'Receipt Gallery' },
   { to: '/analytics', label: 'Analytics' },
 ];
 
@@ -19,8 +18,11 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-semibold text-gray-800">Expense Tracker</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <img src="/assets/cats.png" alt="" className="h-10 w-12 object-contain" />
+            <span className="font-brand text-xl font-semibold text-gray-800">ExpenseSnap</span>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500">{user?.email}</span>
             <button
@@ -31,7 +33,7 @@ export default function AppShell() {
             </button>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-5xl gap-1 px-4">
+        <nav className="mx-auto flex max-w-6xl gap-1 px-4">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
@@ -39,7 +41,7 @@ export default function AppShell() {
               className={({ isActive }) =>
                 `border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'border-blue-600 text-blue-600'
+                    ? 'border-mist-500 text-slate-600'
                     : 'border-transparent text-gray-500 hover:text-gray-800'
                 }`
               }
@@ -50,7 +52,7 @@ export default function AppShell() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-6">
         <Outlet />
       </main>
     </div>

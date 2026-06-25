@@ -7,6 +7,7 @@ import {
   unclaimItem,
   getOrCreateClaimantSessionId,
 } from '../services/splitService.js';
+import ReceiptCard from '../components/receipt/ReceiptCard.jsx';
 
 /**
  * Spec section 5.2 — public, link-accessed, NO LOGIN. Route: /split/:shareToken.
@@ -85,12 +86,11 @@ export default function SplitClaimPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-md space-y-6">
-        <div className="rounded-lg border bg-white p-4 shadow-sm">
-          <h1 className="text-lg font-semibold text-gray-800">{receipt.merchant}</h1>
-          <p className="text-sm text-gray-500">
-            {new Date(receipt.purchaseDate).toLocaleDateString()} &middot; Total ${receipt.total.toFixed(2)}
-          </p>
-        </div>
+        {/* Shared Receipt Card (spec 5.3.1) — same component used in the
+            Expense History detail view and Receipt Gallery, so the claim
+            page's visual language matches the rest of the app even
+            though no photo exists anywhere in this flow. */}
+        <ReceiptCard receipt={receipt} compact />
 
         {split.status !== 'open' ? (
           <CenteredMessage>This link is no longer active.</CenteredMessage>
@@ -103,7 +103,7 @@ export default function SplitClaimPage() {
                 value={claimantName}
                 onChange={(e) => setClaimantName(e.target.value)}
                 placeholder="Enter your name to claim items"
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
               />
             </div>
 

@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
         <select
           value={range}
           onChange={(e) => setRange(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-300 focus:outline-none"
         >
           {RANGE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

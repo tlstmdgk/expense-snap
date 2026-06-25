@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { uploadReceiptImage, parseReceiptImage, saveReceipt } from '../services/receiptService.js';
+import { useEffect, useRef, useState } from 'react';
+import { createLocalPreviewUrl, parseReceiptImage, saveReceipt } from '../services/receiptService.js';
 import { createEntry } from '../services/entriesService.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { EXPENSE_CATEGORIES } from '../utils/categories.js';
@@ -14,21 +14,14 @@ const STEPS = {
   SAVED: 'saved',
 };
 
-/**
- * Spec section 5.1 — full Upload Receipt flow:
- * 1. Drag-and-drop / file picker upload
- * 2. Loading state while the parseReceipt Cloud Function runs OCR
- * 3. Editable review panel (merchant/date/tax/tip/total + line items)
- * 4. Reconciliation check
- * 5. "Save as Expense" and/or "Split this receipt"
- */
+
 export default function UploadReceiptPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [error, setError] = useState('');
 
-  const [imageUrl, setImageUrl] = useState(null);
-  const [storagePath, setStoragePath] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const previewUrlRef = useRef(null);
 
   const [merchant, setMerchant] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
@@ -41,6 +34,29 @@ export default function UploadReceiptPage() {
 
   const [savedReceiptId, setSavedReceiptId] = useState(null);
 
+  // Belt-and-suspenders cleanup: revoke the preview URL on unmount too,
+  // in case the user navigates away mid-review without clicking Save/Reset.
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, []);
+
+  function setPreview(url) {
+    previewUrlRef.current = url;
+    setPreviewUrl(url);
+  }
+
+  function releasePreview() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewUrl(null);
+  }
+
   async function handleFileSelected(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -48,12 +64,12 @@ export default function UploadReceiptPage() {
     setError('');
     setStep(STEPS.PROCESSING);
 
-    try {
-      const { path, imageUrl: uploadedUrl } = await uploadReceiptImage(user.uid, file);
-      setStoragePath(path);
-      setImageUrl(uploadedUrl);
+    // Local-only preview for the review step (see component doc comment
+    // above) — this never touches the network.
+    setPreview(createLocalPreviewUrl(file));
 
-      const parsed = await parseReceiptImage(path);
+    try {
+      const parsed = await parseReceiptImage(file);
       setMerchant(parsed.merchant ?? '');
       setPurchaseDate(parsed.purchaseDate ?? new Date().toISOString().slice(0, 10));
       setItems(parsed.items ?? []);
@@ -71,7 +87,6 @@ export default function UploadReceiptPage() {
 
   async function handleSaveReceipt() {
     const receiptId = await saveReceipt(user.uid, {
-      imageUrl,
       merchant,
       purchaseDate,
       items,
@@ -90,16 +105,18 @@ export default function UploadReceiptPage() {
       date: purchaseDate,
       source: 'receipt',
       receiptId,
-      imageUrl,
     });
 
+    // The receipt is now saved as text/structured data only. Release the
+    // local image preview immediately — by design, nothing visual
+    // persists past this point (spec section 2.4).
+    releasePreview();
     setStep(STEPS.SAVED);
   }
 
   function handleReset() {
+    releasePreview();
     setStep(STEPS.UPLOAD);
-    setImageUrl(null);
-    setStoragePath(null);
     setMerchant('');
     setPurchaseDate('');
     setItems([]);
@@ -124,6 +141,9 @@ export default function UploadReceiptPage() {
             className="mx-auto text-sm text-gray-600"
           />
           <p className="mt-2 text-xs text-gray-400">JPG or PNG. HEIC will be converted automatically.</p>
+          <p className="mt-1 text-xs text-gray-400">
+            Your receipt photo is never stored — only the scanned text and amounts are saved.
+          </p>
         </div>
       )}
 
@@ -136,8 +156,19 @@ export default function UploadReceiptPage() {
       {step === STEPS.REVIEW && (
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-4">
-            {imageUrl && (
-              <img src={imageUrl} alt="Uploaded receipt" className="max-h-80 w-full rounded-lg border object-contain" />
+            {previewUrl && (
+              <>
+                <img
+                  src={previewUrl}
+                  alt="Uploaded receipt (preview only, not saved)"
+                  className="max-h-80 w-full rounded-lg border object-contain"
+                />
+                <p className="text-xs text-gray-400">
+                  This photo is shown only so you can double-check the parsed details. It won't be saved —
+                  double check everything below before continuing, since you won't be able to come back to the
+                  original photo afterward.
+                </p>
+              </>
             )}
             {error && <p className="text-sm text-amber-600">{error}</p>}
           </div>

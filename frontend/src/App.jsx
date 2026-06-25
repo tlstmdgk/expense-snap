@@ -5,11 +5,10 @@ import RequireAuth from './routes/RequireAuth.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import UploadReceiptPage from './pages/UploadReceiptPage.jsx';
 import ExpenseHistoryPage from './pages/ExpenseHistoryPage.jsx';
-import AddExpensePage from './pages/AddExpensePage.jsx';
-import AddIncomePage from './pages/AddIncomePage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import SplitClaimPage from './pages/SplitClaimPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import ReceiptGallery from './components/receipt/ReceiptGallery.jsx';
 
 /**
  * Route structure mirrors spec section 3 (Information Architecture).
@@ -41,9 +40,10 @@ export default function App() {
         <Route index element={<Navigate to="/upload" replace />} />
         <Route path="upload" element={<UploadReceiptPage />} />
         <Route path="history" element={<ExpenseHistoryPage />} />
-        <Route path="add-expense" element={<AddExpensePage />} />
-        <Route path="add-income" element={<AddIncomePage />} />
+        <Route path="receipts" element={<ReceiptGallery />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="add-expense" element={<Navigate to="/history" replace />} />
+        <Route path="add-income" element={<Navigate to="/history" replace />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

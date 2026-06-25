@@ -1,14 +1,20 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
 /**
  * Firebase config values come from environment variables (see .env.example).
  * These values are safe to expose client-side — Firebase's web API keys are
- * not secrets; access is controlled by Firestore/Storage Security Rules
- * (see /functions or /firebase/firestore.rules), not by hiding this config.
+ * not secrets; access is controlled by Firestore Security Rules
+ * (see /firebase/firestore.rules), not by hiding this config.
+ *
+ * NOTE: no `firebase/storage` import here on purpose. Per spec section 2.4,
+ * this app never persists receipt images, so Firebase Storage is unused
+ * across the entire codebase. `VITE_FIREBASE_STORAGE_BUCKET` is left in
+ * the env config below only because some Firebase SDK internals expect
+ * the field to exist on the config object — it's not actually used to
+ * store anything.
  */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,5 +28,4 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 export const functions = getFunctions(app);
