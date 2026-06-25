@@ -79,7 +79,11 @@ export default function UploadReceiptPage() {
       setRawOcrText(parsed.rawOcrText ?? '');
       setStep(STEPS.REVIEW);
     } catch (err) {
-      setError(`Couldn't process that receipt: ${err.message}. You can still enter it manually below.`);
+      if (err.code === 'functions/resource-exhausted') {
+        setError('You have reached today\'s receipt upload limit. You can upload 2 receipts per day.');
+      } else {
+        setError(`Couldn't process that receipt: ${err.message}. You can still enter it manually below.`);
+      }
       setItems([]);
       setStep(STEPS.REVIEW);
     }

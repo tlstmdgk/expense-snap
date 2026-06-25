@@ -1,6 +1,8 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions/v2');
+const { FieldValue } = require('firebase-admin/firestore');
 const vision = require('@google-cloud/vision');
+const { db } = require('./admin');
 const { parseReceiptText } = require('./receiptParser');
 
 /**
@@ -18,6 +20,42 @@ const visionClient = new vision.ImageAnnotatorClient();
 const MAX_BASE64_LENGTH = 9 * 1024 * 1024; // ~9MB of base64 text, leaving headroom
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/heic']);
+const DAILY_UPLOAD_LIMIT = 2;
+
+function getUtcDayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+async function reserveReceiptUpload(uid) {
+  const dayKey = getUtcDayKey();
+  const usageRef = db.collection('receiptUploadUsage').doc(uid).collection('days').doc(dayKey);
+
+  return db.runTransaction(async (transaction) => {
+    const usageSnap = await transaction.get(usageRef);
+    const currentCount = usageSnap.exists ? usageSnap.data().count ?? 0 : 0;
+
+    if (currentCount >= DAILY_UPLOAD_LIMIT) {
+      throw new HttpsError(
+        'resource-exhausted',
+        `Receipt upload limit reached. You can upload ${DAILY_UPLOAD_LIMIT} receipts per day.`
+      );
+    }
+
+    const usageUpdate = {
+      count: FieldValue.increment(1),
+      dayKey,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (!usageSnap.exists || !usageSnap.data().createdAt) {
+      usageUpdate.createdAt = FieldValue.serverTimestamp();
+    }
+
+    transaction.set(usageRef, usageUpdate, { merge: true });
+
+    return currentCount + 1;
+  });
+}
 
 /**
  * parseReceipt — spec section 6.1.
@@ -64,6 +102,13 @@ exports.parseReceipt = onCall({ region: 'us-central1' }, async (request) => {
     uid: request.auth.uid,
     mimeType,
     approxSizeBytes: Math.floor((imageBase64.length * 3) / 4),
+  });
+
+  const uploadsUsedToday = await reserveReceiptUpload(request.auth.uid);
+  logger.info('parseReceipt quota reserved', {
+    uid: request.auth.uid,
+    uploadsUsedToday,
+    dailyUploadLimit: DAILY_UPLOAD_LIMIT,
   });
 
   let result;
