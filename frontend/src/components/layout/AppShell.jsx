@@ -2,8 +2,8 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
 const TABS = [
-  { to: '/upload', label: 'Upload Receipt' },
   { to: '/history', label: 'Expense Tracker' },
+  { to: '/upload', label: 'Upload Receipt' },
   { to: '/receipts', label: 'Receipt Gallery' },
   { to: '/analytics', label: 'Analytics' },
 ];

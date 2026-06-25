@@ -46,6 +46,21 @@ export default function ExpenseHistoryPage() {
   const entries = (data?.entries ?? []).filter((entry) =>
     search ? entry.name.toLowerCase().includes(search.toLowerCase()) : true
   );
+  const totals = entries.reduce(
+    (acc, entry) => {
+      if (entry.type === 'expense') {
+        acc.expense += entry.amount ?? 0;
+      } else if (entry.type === 'income') {
+        acc.income += entry.amount ?? 0;
+      }
+      return acc;
+    },
+    { expense: 0, income: 0 }
+  );
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
 
   async function handleDelete(entryId) {
     if (!confirm('Delete this entry?')) return;
@@ -178,7 +193,7 @@ export default function ExpenseHistoryPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-md bg-sky-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-900 disabled:opacity-50"
+                  className="rounded-md bg-zinc-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : 'Add'}
                 </button>
@@ -298,6 +313,17 @@ export default function ExpenseHistoryPage() {
                 ))}
               </tbody>
             </table>
+            <div className="flex flex-col gap-3 bg-zinc-600 border-t border-slate-950 px-4 py-1 text-sm text-white sm:flex-row sm:items-center sm:justify-end">
+              <div className="flex items-center justify-between gap-6 sm:justify-start">
+                <span className="font-medium text-slate-50">Total Income</span>
+                <span className="font-medium text-emerald-300">{currencyFormatter.format(totals.income)}</span>
+              </div>
+              <div className="hidden h-5 w-px bg-slate-200 sm:block" />
+              <div className="flex items-center justify-between gap-6 sm:justify-start">
+                <span className="font-medium text-slate-50">Total Expense</span>
+                <span className="font-medium text-rose-300">{currencyFormatter.format(totals.expense)}</span>
+              </div>
+            </div>
           </div>
 
       {openReceipt && (
