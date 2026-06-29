@@ -1,5 +1,7 @@
 https://expensesnap-10f31.web.app/
 
+![Expense Tracker](screenshot.png)
+
 ## 1. Project Overview
 
 A web app that lets a user:
